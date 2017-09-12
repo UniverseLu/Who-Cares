@@ -1,0 +1,86 @@
+<!DOCTYPE html >
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8"/>
+    <title>PHP/MySQL & Google Maps Example</title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCu4osXRbVK0yOZDZzLGab5RT4Li4JK3Wo"
+            type="text/javascript"></script>
+    <script type="text/javascript">
+        //<![CDATA[
+        var customIcons = {
+            restaurant: {
+                icon: 'http://labs.google.com/ridefinder/images/mm_20_blue.png',
+                shadow: 'http://labs.google.com/ridefinder/images/mm_20_shadow.png'
+            },
+            bar: {
+                icon: 'http://labs.google.com/ridefinder/images/mm_20_red.png',
+                shadow: 'http://labs.google.com/ridefinder/images/mm_20_shadow.png'
+            },
+            b: { icon: './brand_logo/burger_king_icon.png'
+//                size: new google.maps.Size(20, 32)
+            }
+        };
+        function load() {
+            var map = new google.maps.Map(document.getElementById("map"), {
+                center: new google.maps.LatLng(25.8092,-80.24),
+                zoom: 8,
+                mapTypeId: 'roadmap'
+            });
+            var infoWindow = new google.maps.InfoWindow;
+            // Change this depending on the name of your PHP file
+            downloadUrl("query_data.php", function(data) {
+                var xml = data.responseXML;
+                var markers = xml.documentElement.getElementsByTagName("marker");
+                for (var i = 0; i < markers.length; i++) {
+                    var name = markers[i].getAttribute("name");
+                    var address = markers[i].getAttribute("address");
+                    var type = name.charAt(0).toLocaleLowerCase();
+                    var point = new google.maps.LatLng(
+                            parseFloat(markers[i].getAttribute("lat")),
+                            parseFloat(markers[i].getAttribute("lng")));
+                    var opentime = markers[i].getAttribute("opentime");
+                    var closetime = markers[i].getAttribute("closetime");
+                    var phone_number = markers[i].getAttribute("phone_number");
+                    var html = "<b>" + name + "</b> <br/>" + address + "<br />time: "
+                            + opentime + "-" + closetime + "<br />contact: "
+                            + phone_number;
+                    var icon = customIcons[type] || {};
+                    var marker = new google.maps.Marker({
+                        map: map,
+                        position: point,
+                        icon: icon.icon
+                      //  shadow: icon.shadow
+                        //size: new google.maps.Size(20, 20)
+                    });
+                    bindInfoWindow(marker, map, infoWindow, html);
+                }
+            });
+        }
+        function bindInfoWindow(marker, map, infoWindow, html) {
+            google.maps.event.addListener(marker, 'click', function() {
+                infoWindow.setContent(html);
+                infoWindow.open(map, marker);
+            });
+        }
+        function downloadUrl(url, callback) {
+            var request = window.ActiveXObject ?
+                    new ActiveXObject('Microsoft.XMLHTTP') :
+                    new XMLHttpRequest;
+            request.onreadystatechange = function() {
+                if (request.readyState == 4) {
+                    request.onreadystatechange = doNothing;
+                    callback(request, request.status);
+                }
+            };
+            request.open('GET', url, true);
+            request.send(null);
+        }
+        function doNothing() {}
+        //]]>
+    </script>
+</head>
+
+<body onload="load()">
+<div id="map" style="width: 500px; height: 300px"></div>
+</body>
+</html>
